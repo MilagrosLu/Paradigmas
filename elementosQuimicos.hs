@@ -1,112 +1,97 @@
 import Prelude
 import Text.Show.Functions
 import Data.List
---modificar
-data Componente = Comp {
+
+data Componente = Componente {
     sustancia :: Sustancia,
     cantidad :: Int 
     } deriving(Show,Eq)
 
 data Especie = Metal | NoMetal | Halogeno | GasNoble deriving (Show,Eq)
-data Sustancia = Elementos {
+data Sustancia = Elemento {
     nombre:: String,
     simboloQuimico :: String,
-    numAtomico :: Int,
-    grupo :: Especie
-} | Compuestos {
-    serieComponentes :: [Componente],
+    numeroAtomico :: Int,
+    especie :: Especie
+} | Compuesto {
+    componentes :: [Componente],
     nombre :: String,
-    grupo :: Especie
+    especie :: Especie
 } deriving (Show,Eq)
 
 hidrogeno :: Sustancia
-hidrogeno = Elementos {
+hidrogeno = Elemento {
     nombre ="Hidrogeno",
     simboloQuimico ="H",
-    numAtomico = 1,
-    grupo =  NoMetal
+    numeroAtomico = 1,
+    especie =  NoMetal
 }
 oxigeno :: Sustancia
-oxigeno = Elementos {
+oxigeno = Elemento {
     nombre ="Oxigeno",
     simboloQuimico ="O",
-    numAtomico = 8,
-    grupo =  GasNoble
+    numeroAtomico = 8,
+    especie =  GasNoble
 }
 
 agua :: Sustancia
-agua = Compuestos {
-    serieComponentes= [Comp hidrogeno 2, Comp oxigeno 1],
+agua = Compuesto {
+    componentes = [Componente hidrogeno 2, Componente oxigeno 1],
     nombre = "Agua",
-    grupo = NoMetal
+    especie = NoMetal
 }
 ----------------
 -- 2. CONDUCE BIEN 
 conduceBienElectricidad :: Sustancia -> Bool
-conduceBienElectricidad substance = grupo substance == GasNoble
+conduceBienElectricidad substance = especie substance == GasNoble
 
 conduceBienCalor :: Sustancia -> Bool
-conduceBienCalor substance = grupo substance == Halogeno
+conduceBienCalor substance = especie substance == Halogeno
 
 conduceBien :: Sustancia -> Bool
 conduceBien substance = conduceBienCalor substance || conduceBienElectricidad substance
 -----------
 ----- 3. NOMBRE DE UNION
+
 esVocal :: Char -> Bool
-esVocal letra = elem letra "aeiou"
-
-sufijoUnion :: String
-sufijoUnion = "uro"
-
-sacarUltimoElemento :: [a] -> [a]
-sacarUltimoElemento lista =  reverse . tail . reverse $ lista
-
-auxNombreUnion :: String -> String
-auxNombreUnion nomsust
-                | not . esVocal . last $ nomsust = nomsust ++ sufijoUnion
-                | esVocal . last $ nomsust = auxNombreUnion . sacarUltimoElemento $ nomsust
+esVocal = flip elem "aeiou"
 
 nombreUnion :: Sustancia -> String
-nombreUnion sust = auxNombreUnion . nombre $ sust
----------------
--- 4. COMBINAR 2 NOMBRES
-combinarSustanciasAux :: String -> String -> String
-combinarSustanciasAux nomsust1 nomsust2 = auxNombreUnion nomsust1 ++ " de " ++ nomsust2
+nombreUnion = (++ "uro") . reverse . dropWhile esVocal . reverse . nombre
 
-combinarSustancias :: Sustancia -> Sustancia -> String
-combinarSustancias sust1 sust2 = combinarSustanciasAux (nombre sust1) (nombre sust2)
+-- 4. COMBINAR 2 NOMBRES
+combinarNombreSustancias :: Sustancia -> String -> String
+combinarNombreSustancias sustancia1 nombreSustancia2 = nombreUnion sustancia1 ++ " de " ++ nombreSustancia2
+
 
 ------------------------
 -- 5. MEZCLAR UNA SERIE DE COMPONENTES ENTRE SÍ
-combinarNombres ::  [String] -> String
-combinarNombres listaNombres = foldr combinarSustanciasAux (last listaNombres) (sacarUltimoElemento listaNombres)
+nombreMezcla ::  [Sustancia] -> String
+nombreMezcla sustancias = foldr combinarNombreSustancias (nombre . last $ sustancias) (init sustancias)
 
 mezclar :: [Componente] -> Sustancia
-mezclar listaComponentes = Compuestos {
-                            serieComponentes= listaComponentes,
-                            nombre = combinarNombres . map (nombre . sustancia) $ listaComponentes,
-                            grupo = NoMetal
+mezclar componentes = Compuesto {
+                            componentes= componentes,
+                            nombre = nombreMezcla . map sustancia $ componentes,
+                            especie = NoMetal
                             }
     
 ---componentes para probar función
-componente1 = Comp agua 2
-componente2 = Comp hidrogeno 3
-componente3 = Comp oxigeno 1
+componente1 = Componente agua 2
+componente2 = Componente hidrogeno 3
+componente3 = Componente oxigeno 1
 
 -----------------------
 --6. OBTNER FORMULA DE UNA SUSTANCIA
-juntarSustancia :: [Componente] -> String
-juntarSustancia component = "(" ++ concatMap concatenarComponentes component ++ ")"
+unirNombres :: [Componente] -> String
+unirNombres componentes = "(" ++ concatMap representacion componentes ++ ")"
 
-concatenarComponentes :: Componente -> String
-concatenarComponentes (Comp (Elementos _ sust _ _) cantidad)
-    | cantidad == 1 = sust
-    | otherwise = sust ++ show cantidad 
+representacion :: Componente -> String
+representacion componente
+    | cantidad componente == 1 = formulaSustancia . sustancia $ componente
+    | otherwise = (formulaSustancia . sustancia $ componente) ++ (show . cantidad  $ componente)
 
-concatenarComponentes (Comp (Compuestos comp _ _ ) cantidad)
-    | cantidad == 1 = juntarSustancia comp
-    | otherwise = juntarSustancia comp ++ show cantidad
 
-obtenerFormula :: Sustancia -> String
-obtenerFormula (Elementos _ simb _ _) = simb
-obtenerFormula (Compuestos comp _ _ ) = juntarSustancia comp
+formulaSustancia :: Sustancia -> String
+formulaSustancia (Elemento _ simb _ _) = simb
+formulaSustancia (Compuesto componentes _ _ ) = unirNombres componentes
