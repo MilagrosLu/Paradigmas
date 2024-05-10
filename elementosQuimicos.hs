@@ -1,7 +1,7 @@
 import Prelude
 import Text.Show.Functions
 import Data.List
-
+--modificar
 data Componente = Comp {
     sustancia :: Sustancia,
     cantidad :: Int 
