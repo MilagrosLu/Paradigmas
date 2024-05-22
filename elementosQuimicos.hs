@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Use newtype instead of data" #-}
 import Prelude
 import Text.Show.Functions
 import Data.List
@@ -40,16 +42,37 @@ agua = Compuesto {
     nombre = "Agua",
     especie = NoMetal
 }
+data Criterio = Criterio {
+    especieConductora :: Especie
+} deriving (Show, Eq)
+
+calor :: Criterio
+calor = Criterio {
+    especieConductora = Halogeno
+}
+electricidad :: Criterio 
+electricidad = Criterio{
+    especieConductora = GasNoble
+}
+
+conduceBien :: Criterio -> Sustancia -> Bool
+conduceBien unCriterio unaSustancia = esMetal unaSustancia || (especieConductora unCriterio == especie unaSustancia)
+ where 
+    esMetal sustancia = especie sustancia == Metal
+
 ----------------
 -- 2. CONDUCE BIEN 
-conduceBienElectricidad :: Sustancia -> Bool
-conduceBienElectricidad substance = especie substance == GasNoble
+{-
+data Criterio = Calor | Electricidad | Energia
+esMetal :: Especie -> Bool
+esMetal especie = especie == Metal
 
-conduceBienCalor :: Sustancia -> Bool
-conduceBienCalor substance = especie substance == Halogeno
-
-conduceBien :: Sustancia -> Bool
-conduceBien substance = conduceBienCalor substance || conduceBienElectricidad substance
+conduceBien :: Criterio -> Sustancia -> Bool
+conduceBien Calor (Compuesto _ _ especie) = esMetal especie  || especie == Halogeno
+conduceBien Calor (Elemento _ _ _ especie) = esMetal especie 
+conduceBien Electricidad (Elemento _ _ _ especie)= esMetal especie  || especie == GasNoble
+conduceBien Electricidad (Compuesto _ _ especie) = esMetal especie  
+-}
 -----------
 ----- 3. NOMBRE DE UNION
 
@@ -74,7 +97,7 @@ mezclar componentes = Compuesto {
                             componentes= componentes,
                             nombre = nombreMezcla . map sustancia $ componentes,
                             especie = NoMetal
-                            }
+}
     
 ---componentes para probar función
 componente1 = Componente agua 2
