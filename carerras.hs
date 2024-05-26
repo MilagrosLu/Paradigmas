@@ -39,3 +39,22 @@ alterarVelocidad modificador unAuto = unAuto {velocidad = modificador (velocidad
 
 bajarVelocidad :: Int -> NuevoAuto
 bajarVelocidad cantidad = alterarVelocidad (max 0 . flip (-) cantidad) 
+
+--PUNTO 3
+
+type PowerUp = Auto  -> Carrera -> Carrera 
+
+afectarALosQueCumplen :: (a -> Bool) -> (a -> a) -> [a] -> [a]
+afectarALosQueCumplen criterio efecto lista = (map efecto . filter criterio) lista ++ filter (not.criterio) lista
+
+terremoto :: PowerUp
+terremoto autoGatillo = afectarALosQueCumplen (estaCerca autoGatillo) (bajarVelocidad 50) 
+
+miguelito :: Int -> PowerUp
+miguelito cantidad autoGatillado = afectarALosQueCumplen ((distancia autoGatillado >) . distancia) (bajarVelocidad cantidad)
+
+jetPack :: Int -> PowerUp
+jetPack duracion autoGatillado = afectarALosQueCumplen ((color autoGatillado ==) . color ) (efectoJetPack duracion) 
+    where 
+        efectoJetPack duracion unAuto =  alterarVelocidad (const (velocidad unAuto))  . correr duracion . alterarVelocidad (*2) $  unAuto
+
