@@ -6,7 +6,7 @@ import Data.List
 -- LENGTH DE LISTA PARA EL PUETSO 
  --12:10 lectura 20 min 
 --PUNTO 1--
-data Color = Rojo | Azul deriving (Show, Eq)
+data Color = Rojo | Azul | Blanco | Negro deriving (Show, Eq)
 data Auto = Auto {
     color :: Color, 
     velocidad :: Int , 
@@ -58,3 +58,32 @@ jetPack duracion autoGatillado = afectarALosQueCumplen ((color autoGatillado ==)
     where 
         efectoJetPack duracion unAuto =  alterarVelocidad (const (velocidad unAuto))  . correr duracion . alterarVelocidad (*2) $  unAuto
 
+--Punto 4
+
+type Evento = Carrera -> Carrera 
+
+{-
+data Posicion = Posicion{
+    posicion :: Int ,
+    auto :: Color
+} deriving (Show, Eq)
+-}
+--type TablaPosicion = [(Int, Color)]
+
+simularCarrera :: Carrera -> [Evento] -> [(Int, Color)]
+simularCarrera unaCarrera eventos = map (obtenerPosicion carreraFinalizada ) carreraFinalizada
+    where   
+        carreraFinalizada = foldr (\evento carrera -> evento carrera) unaCarrera eventos
+
+obtenerPosicion :: Carrera -> Auto -> (Int, Color)
+obtenerPosicion unaCarrera unAuto = (puesto unAuto unaCarrera , color unAuto )
+    -- realizar toda la carrera y luego hgaver un map de los autos resultantes con calculo del puento. 
+
+correnTodos :: Int -> Evento 
+correnTodos tiempo = map (correr tiempo) 
+usarPowerups :: Color -> PowerUp -> Carrera -> Carrera
+usarPowerups colorAuto powerUp unaCarrera = powerUp auto unaCarrera 
+    where 
+        auto = (\ [x] -> x) . filter ((== colorAuto) . color) $ unaCarrera
+
+-- tirar excepcion si hay más de un auto del mimso color algo que no puede pasar
