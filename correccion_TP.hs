@@ -2,7 +2,7 @@ import Prelude
 import Text.Show.Functions
 import Data.List
 
-
+type Atraccion = String
 data Ciudad = Ciudad {
     nombre:: String,
     anioFundacion :: Int,
@@ -100,9 +100,7 @@ esVocal :: Char -> Bool
 esVocal letra = elem letra "aeiouAEIOU"
 
 tieneAtraccionCopada :: Ciudad -> Bool
-tieneAtraccionCopada = any esAtraccionCopada . atracciones
-    where
-        esAtraccionCopada = esVocal . head 
+tieneAtraccionCopada = any (esVocal . head) . atracciones
 
 ----------------------------------------------------------
 --b) Ciudad Sobria 
@@ -122,12 +120,12 @@ esCiudadConNombreRaro = (<5) . length . nombre
 
 -- Punto 3: Eventos -- 
 
-type Atraccion = String
+
 modificarCostoDeVida :: (Float -> Float) -> Ciudad -> Ciudad
 modificarCostoDeVida modificador unaCiudad= unaCiudad {costoDeVida = modificador . costoDeVida $ unaCiudad}
 
 modificarAtracciones :: ([Atraccion] -> [Atraccion]) -> Ciudad -> Ciudad
-modificarAtracciones modificador unaCiudad= unaCiudad {atracciones = modificador . atracciones $ unaCiudad}
+modificarAtracciones modificador unaCiudad = unaCiudad {atracciones = modificador . atracciones $ unaCiudad}
 
 modificarNombre :: (String -> String) -> Ciudad -> Ciudad
 modificarNombre modificador unaCiudad = unaCiudad {nombre = modificador . nombre $ unaCiudad}
@@ -139,16 +137,18 @@ sumarAtraccion :: Atraccion -> Evento
 sumarAtraccion nuevaAtraccion = modificarCostoDeVida (*1.2) . modificarAtracciones (nuevaAtraccion :) 
 -- b) Crisis
 crisis :: Evento
-crisis ciudadInicial 
-    | null . atracciones $ ciudadInicial= modificarCostoDeVida (*0.9) ciudadInicial
-    | otherwise = modificarAtracciones init . modificarCostoDeVida (*0.9) $ ciudadInicial
+crisis = modificarCostoDeVida (*0.9) . modificarAtracciones (\atracciones -> take (length atracciones - 1) atracciones) 
 -- c) Remodelacion
+
+calculoPorcentaje :: Float -> Float -> Float 
+calculoPorcentaje porcentaje = ((100 + porcentaje) / 100 *)
+
 remodelacion :: Float -> Evento 
-remodelacion porcentaje = modificarNombre ("New " ++) . modificarCostoDeVida ((100 + porcentaje) / 100 *) 
+remodelacion porcentaje = modificarNombre ("New " ++) . modificarCostoDeVida (calculoPorcentaje porcentaje)
 -- d) Reevaluacion
 reevaluacion :: Int -> Evento
-reevaluacion cantLetras ciudadInicial
-    | esCiudadSobria cantLetras ciudadInicial = modificarCostoDeVida (*1.1) ciudadInicial
+reevaluacion cantidadLetras ciudadInicial
+    | esCiudadSobria cantidadLetras ciudadInicial = modificarCostoDeVida (*1.1) ciudadInicial
     | otherwise = modificarCostoDeVida (subtract 3) ciudadInicial
 
 -------------------------------------------------------------------------------------------------------------------
@@ -188,7 +188,7 @@ reevaluacion cantLetras ciudadInicial
 type Anio = [Evento]
 
 reflejarPasoAnio :: Anio -> Ciudad -> Ciudad
-reflejarPasoAnio anio unaCiudad = foldr ($) unaCiudad anio 
+reflejarPasoAnio = flip (foldr ($))
 
 -- Generar Criterios
 mejoroCiudadEn :: Ord a => (Ciudad -> a) -> Ciudad -> Evento -> Bool
@@ -218,16 +218,19 @@ estanOrdenados (x: y : xs) = x <= y && estanOrdenados (y:xs)
 costoDeVidaAfectado :: Ciudad -> Evento -> Float
 costoDeVidaAfectado unaCiudad evento = costoDeVida . evento $ unaCiudad
 
+mapEstanOrdenados :: Ord a1 => (a2 -> a1) -> [a2] -> Bool
+mapEstanOrdenados f = estanOrdenados . map f
+
 eventosOrdenados :: Ciudad -> Anio -> Bool
-eventosOrdenados unaCiudad = estanOrdenados . map (costoDeVidaAfectado unaCiudad)
+eventosOrdenados unaCiudad = mapEstanOrdenados (costoDeVidaAfectado unaCiudad)
 
 -- 6.2) Ciudades ordenadas
 ciudadesOrdenadas :: Evento -> [Ciudad] -> Bool
-ciudadesOrdenadas evento = estanOrdenados . map (flip costoDeVidaAfectado evento)
+ciudadesOrdenadas evento = mapEstanOrdenados (flip costoDeVidaAfectado evento)
 
 -- 6.3) Años ordenados
-serieCostosDeVidaAscendente :: [Anio] -> Ciudad -> Bool
-serieCostosDeVidaAscendente anios ciudad =  estanOrdenados . map (costoDeVida . flip reflejarPasoAnio ciudad) $ anios
+serieCostosDeVidaAscendente :: Ciudad -> [Anio] ->  Bool
+serieCostosDeVidaAscendente  ciudad =  mapEstanOrdenados (costoDeVida . flip reflejarPasoAnio ciudad)
 -------------------------------------------------------------------------------------------------------------------
 
 -- Parte 7:  Al infinito, y más allá... --
