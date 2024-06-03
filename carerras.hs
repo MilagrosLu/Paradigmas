@@ -12,8 +12,11 @@ data Auto = Auto {
 
 type Carrera = [Auto]
 
+sonIguales :: Auto -> Auto -> Bool
+sonIguales auto1 auto2 = color auto1 /= color auto2
+
 estaCerca :: Auto -> Auto -> Bool
-estaCerca auto1 auto2 =  color auto1 /= color auto2 && abs (distancia auto1 - distancia auto2) < 10
+estaCerca auto1 auto2 =  not (sonIguales auto1 auto2) && abs (distancia auto1 - distancia auto2) < 10
 
 autosQueLeGanan :: Auto -> Carrera -> [Auto]
 autosQueLeGanan unAuto = filter ((distancia unAuto <) . distancia) 
@@ -24,17 +27,17 @@ puesto unAuto = (1 +) . length . autosQueLeGanan unAuto
 vaTranquilo :: Auto -> Carrera -> Bool
 vaTranquilo unAuto unaCarrera = (not . any (estaCerca unAuto)) unaCarrera && puesto unAuto unaCarrera == 1 
 
-type NuevoAuto = Auto -> Auto 
+type ModificadorAuto = Auto -> Auto 
 --PUNTO 2   
-correr :: Int -> NuevoAuto
+correr :: Int -> ModificadorAuto
 correr tiempo unAuto = unAuto { distancia = distancia unAuto + velocidad unAuto * tiempo }
 
-alterarVelocidad :: (Int -> Int) -> NuevoAuto
+alterarVelocidad :: (Int -> Int) -> ModificadorAuto
 alterarVelocidad modificador unAuto = unAuto {velocidad = modificador (velocidad unAuto)}
 
 
-bajarVelocidad :: Int -> NuevoAuto
-bajarVelocidad cantidad = alterarVelocidad (max 0 . flip (-) cantidad) 
+bajarVelocidad :: Int -> ModificadorAuto
+bajarVelocidad cantidad = alterarVelocidad (max 0 . subtract cantidad) 
 
 --PUNTO 3
 
@@ -44,15 +47,15 @@ afectarALosQueCumplen :: (a -> Bool) -> (a -> a) -> [a] -> [a]
 afectarALosQueCumplen criterio efecto lista = (map efecto . filter criterio) lista ++ filter (not.criterio) lista
 
 terremoto :: PowerUp
-terremoto autoGatillo = afectarALosQueCumplen (estaCerca autoGatillo) (bajarVelocidad 50) 
+terremoto autoGatillador = afectarALosQueCumplen (estaCerca autoGatillador) (bajarVelocidad 50) 
 
 miguelito :: Int -> PowerUp
-miguelito cantidad autoGatillado = afectarALosQueCumplen ((distancia autoGatillado >) . distancia) (bajarVelocidad cantidad)
+miguelito cantidad autoGatillador = afectarALosQueCumplen ((distancia autoGatillador >) . distancia) (bajarVelocidad cantidad)
 
 jetPack :: Int -> PowerUp
-jetPack duracion autoGatillado = afectarALosQueCumplen ((color autoGatillado ==) . color ) (efectoJetPack duracion) 
+jetPack duracion autoGatillador = afectarALosQueCumplen (sonIguales autoGatillador ) efectoJetPack 
     where 
-        efectoJetPack duracion unAuto =  alterarVelocidad (const (velocidad unAuto))  . correr duracion . alterarVelocidad (*2) $  unAuto
+        efectoJetPack unAuto =  alterarVelocidad (const (velocidad unAuto))  . correr duracion . alterarVelocidad (*2) $  unAuto
 
 
 --Punto 4
@@ -62,12 +65,12 @@ type Evento = Carrera -> Carrera
 type Posicion = (Int, Color)
 
 simularCarrera :: Carrera -> [Evento] -> [Posicion]
-simularCarrera unaCarrera eventos = map (obtenerPosicion carreraFinalizada ) carreraFinalizada
+simularCarrera unaCarrera eventos = map (posicion carreraFinalizada ) carreraFinalizada
     where   
-        carreraFinalizada = foldr (\evento carrera -> evento carrera) unaCarrera eventos
+        carreraFinalizada = foldr ($) unaCarrera eventos
 
-obtenerPosicion :: Carrera -> Auto -> Posicion
-obtenerPosicion unaCarrera unAuto = (puesto unAuto unaCarrera , color unAuto )
+posicion :: Carrera -> Auto -> Posicion
+posicion unaCarrera unAuto = (puesto unAuto unaCarrera , color unAuto )
 
 correnTodos :: Int -> Evento 
 correnTodos tiempo = map (correr tiempo) 
