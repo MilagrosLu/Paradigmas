@@ -1,0 +1,33 @@
+import telefonia.*
+import packs.*
+import linea.*
+import consumos.*
+describe "Test-1" {
+    const fechaVencimiento = new Date (day = 20, month = 11, year = 2024)
+    const vencimiento = new Vencimeinto (fechaVencimiento = fechaVencimiento)
+    const pack50MBLibres = new MegasLibres(megasLibres = 50, vigencia = vencimiento)
+    const llamadaGratis = new LlamadaGratis (vigencia = vencimiento )
+    const lineaA = new Linea (tipoLinea = comun, packs = [llamadaGratis], consumos = [])
+    const consumo1 = new ConsumosInternet (fecha = fechaConsumo, megasConsumidos = 20)
+    const consumo2 = new ConsumosLlamadas (fecha = fechaConsumo2, segundoConsumidos = 120)
+    const fechaConsumo = new Date (day = 10, month = 11, year = 2024)
+    const fechaConsumo2 = new Date (day = 10, month = 12, year = 2024)
+
+    test "Se consume un pack de megas" {
+        lineaA.agregarPack(pack50MBLibres)
+        lineaA.realizarConsumo(consumo1)
+        assert.equals(30, pack50MBLibres.megasLibres())
+        //assert.that(lineaA.tienePacksParaConsumir(consumo1))
+
+    }
+    test "No se puede Consumir consumo de 60 megas" {
+        lineaA.agregarPack(pack50MBLibres)
+        assert.throwsException({lineaA.realizarConsumo(consumo2)})
+    }
+    test "Gasto ultimos 30 dias "{
+        lineaA.agregarPack(pack50MBLibres)
+        lineaA.realizarConsumo(consumo1)
+        assert.equals(2, lineaA.gastoLineaUltimos30Dias())
+    }
+
+}
